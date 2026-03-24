@@ -171,52 +171,36 @@
     }
 
     /* Radar circle */
-.radar {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 520px;
-  height: 520px;
-  opacity: 0.25; /* increased from 0.06 */
-  pointer-events: none;
-  filter: drop-shadow(0 0 20px rgba(0,255,106,0.2));
-}
+    .radar {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 500px;
+      height: 500px;
+      opacity: 0.06;
+      pointer-events: none;
+    }
 
-  .radar-ring {
-  position: absolute;
-  border: 1px solid rgba(0,255,106,0.4);
-  border-radius: 50%;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  box-shadow: 0 0 10px rgba(0,255,106,0.1);
-  animation: radar-pulse 4s ease-out infinite;
-}
+    .radar-ring {
+      position: absolute;
+      border: 1px solid var(--green);
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
 
-@keyframes radar-pulse {
-  0% { opacity: 0.6; }
-  50% { opacity: 0.2; }
-  100% { opacity: 0.6; }
-}
-
-.radar-sweep {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 260px;
-  height: 260px;
-  transform-origin: center;
-  border-radius: 50%;
-  background: conic-gradient(
-    rgba(0,255,106,0.35) 0deg,
-    rgba(0,255,106,0.2) 10deg,
-    rgba(0,255,106,0.08) 25deg,
-    transparent 60deg
-  );
-  animation: sweep 3s linear infinite;
-  filter: blur(2px);
-}
+    .radar-sweep {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 250px;
+      height: 1px;
+      transform-origin: left center;
+      background: linear-gradient(90deg, var(--green), transparent);
+      animation: sweep 4s linear infinite;
+    }
 
     @keyframes sweep {
       from { transform: rotate(0deg); }
