@@ -1,9 +1,1096 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>My App</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIGNAL UNKNOWN — UAP Intelligence Hub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #030a06;
+      --surface: #080f0a;
+      --card: #0b150d;
+      --green: #00ff6a;
+      --green-dim: #00c44f;
+      --green-faint: rgba(0,255,106,0.08);
+      --green-border: rgba(0,255,106,0.2);
+      --amber: #ffb300;
+      --red: #ff3b3b;
+      --text: #c8e8cc;
+      --text-dim: #6a9370;
+      --text-muted: #3d5c42;
+      --scanline: rgba(0,255,106,0.03);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      line-height: 1.7;
+      overflow-x: hidden;
+      cursor: crosshair;
+    }
+
+    /* Scanline overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        var(--scanline) 2px,
+        var(--scanline) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* Noise texture */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9998;
+      opacity: 0.4;
+    }
+
+    /* ─── HEADER ─── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(3,10,6,0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--green-border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+    }
+
+    .logo {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+      font-size: 1.1rem;
+      color: var(--green);
+      letter-spacing: 0.15em;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .logo-icon {
+      width: 28px;
+      height: 28px;
+      border: 2px solid var(--green);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: pulse-ring 2s ease-in-out infinite;
+      position: relative;
+    }
+
+    .logo-icon::after {
+      content: '';
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-ring {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(0,255,106,0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(0,255,106,0); }
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .header-status {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .status-live {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--red);
+    }
+
+    .status-live::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--red);
+      border-radius: 50%;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* ─── HERO ─── */
+    .hero {
+      padding: 5rem 2rem 3rem;
+      text-align: center;
+      position: relative;
+      border-bottom: 1px solid var(--green-border);
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 50% 100%, rgba(0,255,106,0.06) 0%, transparent 70%),
+        radial-gradient(ellipse 30% 60% at 20% 50%, rgba(0,196,79,0.03) 0%, transparent 60%),
+        radial-gradient(ellipse 30% 60% at 80% 50%, rgba(0,196,79,0.03) 0%, transparent 60%);
+    }
+
+    /* Radar circle */
+    .radar {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 500px;
+      height: 500px;
+      opacity: 0.06;
+      pointer-events: none;
+    }
+
+    .radar-ring {
+      position: absolute;
+      border: 1px solid var(--green);
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .radar-sweep {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 250px;
+      height: 1px;
+      transform-origin: left center;
+      background: linear-gradient(90deg, var(--green), transparent);
+      animation: sweep 4s linear infinite;
+    }
+
+    @keyframes sweep {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .hero-eyebrow {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.3em;
+      color: var(--green-dim);
+      text-transform: uppercase;
+      margin-bottom: 1.2rem;
+      position: relative;
+    }
+
+    .hero-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(2.2rem, 6vw, 4.5rem);
+      font-weight: 900;
+      color: var(--green);
+      letter-spacing: 0.05em;
+      line-height: 1.1;
+      text-shadow: 0 0 40px rgba(0,255,106,0.3), 0 0 80px rgba(0,255,106,0.1);
+      position: relative;
+      margin-bottom: 0.5rem;
+    }
+
+    .hero-sub {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      color: var(--text-dim);
+      position: relative;
+      margin-bottom: 2.5rem;
+    }
+
+    .hero-stats {
+      display: flex;
+      justify-content: center;
+      gap: 3rem;
+      flex-wrap: wrap;
+      position: relative;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-num {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--green);
+      display: block;
+    }
+
+    .stat-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    /* ─── TICKER ─── */
+    .ticker-wrap {
+      background: rgba(0,255,106,0.05);
+      border-top: 1px solid var(--green-border);
+      border-bottom: 1px solid var(--green-border);
+      overflow: hidden;
+      padding: 0.5rem 0;
+    }
+
+    .ticker {
+      display: flex;
+      gap: 0;
+      white-space: nowrap;
+      animation: ticker 40s linear infinite;
+    }
+
+    .ticker:hover { animation-play-state: paused; }
+
+    @keyframes ticker {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+
+    .ticker-item {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+      padding: 0 2rem;
+      border-right: 1px solid var(--green-border);
+    }
+
+    .ticker-item span {
+      color: var(--green);
+      margin-right: 0.5rem;
+    }
+
+    /* ─── LAYOUT ─── */
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    .section {
+      padding: 3rem 0;
+      border-bottom: 1px solid var(--green-border);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .section-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.25em;
+      color: var(--green);
+      text-transform: uppercase;
+    }
+
+    .section-line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, var(--green-border), transparent);
+    }
+
+    .section-count {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+    }
+
+    /* ─── NEWS GRID ─── */
+    .news-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .news-grid { grid-template-columns: 1fr; }
+    }
+
+    .news-main { display: flex; flex-direction: column; gap: 1rem; }
+    .news-side { display: flex; flex-direction: column; gap: 1rem; }
+
+    /* ─── CARD ─── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--green-border);
+      padding: 1.5rem;
+      position: relative;
+      transition: border-color 0.2s, background 0.2s;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--green-border), transparent);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .card:hover {
+      border-color: rgba(0,255,106,0.4);
+      background: rgba(11,21,13,0.9);
+    }
+
+    .card:hover::before { opacity: 1; }
+
+    .card-tag {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.6rem;
+      border: 1px solid;
+      display: inline-block;
+      margin-bottom: 0.8rem;
+    }
+
+    .tag-disclosure { color: var(--amber); border-color: rgba(255,179,0,0.3); background: rgba(255,179,0,0.05); }
+    .tag-congress { color: #4fc3f7; border-color: rgba(79,195,247,0.3); background: rgba(79,195,247,0.05); }
+    .tag-sighting { color: var(--green); border-color: var(--green-border); background: var(--green-faint); }
+    .tag-science { color: #ce93d8; border-color: rgba(206,147,216,0.3); background: rgba(206,147,216,0.05); }
+    .tag-breaking { color: var(--red); border-color: rgba(255,59,59,0.3); background: rgba(255,59,59,0.05); }
+    .tag-military { color: #80cbc4; border-color: rgba(128,203,196,0.3); background: rgba(128,203,196,0.05); }
+
+    .card-title {
+      font-family: 'Space Mono', monospace;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.4;
+      margin-bottom: 0.6rem;
+      transition: color 0.2s;
+    }
+
+    .card:hover .card-title { color: var(--green); }
+
+    .card-title a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .card-excerpt {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      line-height: 1.7;
+      margin-bottom: 1rem;
+    }
+
+    .card-meta {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.62rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      letter-spacing: 0.05em;
+    }
+
+    .card-meta-source { color: var(--green-dim); }
+
+    /* Featured card */
+    .card-featured {
+      background: linear-gradient(135deg, rgba(11,21,13,1) 0%, rgba(0,255,106,0.03) 100%);
+      border-color: rgba(0,255,106,0.3);
+    }
+
+    .card-featured .card-title {
+      font-size: 1.3rem;
+    }
+
+    /* Mini cards for sidebar */
+    .card-mini {
+      padding: 1rem;
+    }
+
+    .card-mini .card-title { font-size: 0.82rem; }
+
+    /* ─── ALERT BANNER ─── */
+    .alert {
+      background: rgba(255,59,59,0.05);
+      border: 1px solid rgba(255,59,59,0.3);
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .alert-icon {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.6rem;
+      color: var(--red);
+      letter-spacing: 0.1em;
+      white-space: nowrap;
+      padding-top: 0.1rem;
+    }
+
+    .alert-text {
+      font-size: 0.8rem;
+      color: #ffaaaa;
+      line-height: 1.6;
+    }
+
+    /* ─── SOURCES GRID ─── */
+    .sources-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .source-card {
+      border: 1px solid var(--green-border);
+      padding: 1rem;
+      text-decoration: none;
+      display: block;
+      transition: all 0.2s;
+      position: relative;
+      background: var(--card);
+    }
+
+    .source-card:hover {
+      border-color: var(--green);
+      background: var(--green-faint);
+    }
+
+    .source-name {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--green);
+      letter-spacing: 0.1em;
+      margin-bottom: 0.3rem;
+    }
+
+    .source-desc {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .source-type {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.6rem;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.55rem;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+    }
+
+    /* ─── TIMELINE ─── */
+    .timeline {
+      position: relative;
+      padding-left: 2rem;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: linear-gradient(180deg, var(--green), transparent);
+    }
+
+    .timeline-item {
+      position: relative;
+      padding-bottom: 1.5rem;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -2.35rem;
+      top: 0.35rem;
+      width: 8px;
+      height: 8px;
+      border: 1px solid var(--green);
+      background: var(--bg);
+    }
+
+    .timeline-date {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.62rem;
+      color: var(--green-dim);
+      letter-spacing: 0.1em;
+      margin-bottom: 0.3rem;
+    }
+
+    .timeline-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.3rem;
+      line-height: 1.4;
+    }
+
+    .timeline-body {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    /* ─── GLOSSARY ─── */
+    .glossary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    .glossary-item {
+      border-left: 2px solid var(--green-border);
+      padding-left: 1rem;
+    }
+
+    .glossary-term {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--green);
+      letter-spacing: 0.1em;
+      margin-bottom: 0.3rem;
+    }
+
+    .glossary-def {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    /* ─── FOOTER ─── */
+    footer {
+      padding: 3rem 2rem;
+      text-align: center;
+      border-top: 1px solid var(--green-border);
+      background: var(--surface);
+    }
+
+    .footer-logo {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 900;
+      color: var(--green);
+      letter-spacing: 0.2em;
+      margin-bottom: 0.5rem;
+    }
+
+    .footer-text {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.62rem;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      line-height: 2;
+    }
+
+    /* ─── NAV TABS ─── */
+    nav {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--green-border);
+      overflow-x: auto;
+    }
+
+    nav a {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 0.7rem 1.2rem;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    nav a:hover, nav a.active {
+      color: var(--green);
+      border-bottom-color: var(--green);
+    }
+
+    /* Animations on load */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate { animation: fadeInUp 0.6s ease forwards; opacity: 0; }
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+    .delay-4 { animation-delay: 0.4s; }
+    .delay-5 { animation-delay: 0.5s; }
+
+    /* Glitch effect on logo */
+    .glitch {
+      position: relative;
+    }
+    .glitch::before, .glitch::after {
+      content: attr(data-text);
+      position: absolute;
+      inset: 0;
+      font-family: inherit;
+      font-weight: inherit;
+      font-size: inherit;
+    }
+    .glitch::before {
+      color: #ff003c;
+      clip-path: polygon(0 30%, 100% 30%, 100% 50%, 0 50%);
+      animation: glitch-1 4s infinite;
+      opacity: 0;
+    }
+    .glitch::after {
+      color: #00ffe0;
+      clip-path: polygon(0 60%, 100% 60%, 100% 80%, 0 80%);
+      animation: glitch-2 4s infinite;
+      opacity: 0;
+    }
+    @keyframes glitch-1 {
+      0%, 90%, 100% { opacity: 0; transform: translate(0); }
+      92% { opacity: 0.8; transform: translate(-3px, 2px); }
+      94% { opacity: 0.8; transform: translate(3px, -2px); }
+    }
+    @keyframes glitch-2 {
+      0%, 90%, 100% { opacity: 0; transform: translate(0); }
+      92% { opacity: 0.8; transform: translate(3px, 2px); }
+      94% { opacity: 0.8; transform: translate(-3px, -2px); }
+    }
+  </style>
 </head>
 <body>
-  <h1>Hello World!</h1>
+
+  <!-- HEADER -->
+  <header>
+    <a href="#" class="logo">
+      <div class="logo-icon"></div>
+      SIGNAL_UNKNOWN
+    </a>
+    <div class="header-status">
+      <span class="status-live">LIVE FEED</span>
+      <span id="clock">00:00:00 UTC</span>
+      <span>AARO CASES: 2,000+</span>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-bg"></div>
+    <div class="radar">
+      <div class="radar-ring" style="width:100%;height:100%;"></div>
+      <div class="radar-ring" style="width:70%;height:70%;"></div>
+      <div class="radar-ring" style="width:40%;height:40%;"></div>
+      <div class="radar-sweep"></div>
+    </div>
+    <p class="hero-eyebrow animate">// UNCLASSIFIED INTELLIGENCE AGGREGATOR //</p>
+    <h1 class="hero-title glitch animate delay-1" data-text="SIGNAL UNKNOWN">SIGNAL UNKNOWN</h1>
+    <p class="hero-sub animate delay-2">UAP · DISCLOSURE · GOVERNMENT FILES · SIGHTINGS · SCIENCE</p>
+    <div class="hero-stats animate delay-3">
+      <div class="stat">
+        <span class="stat-num">2,000+</span>
+        <span class="stat-label">AARO Cases</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">3,000+</span>
+        <span class="stat-label">2025 Sightings</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">PENDING</span>
+        <span class="stat-label">Disclosure EO</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">MAR '26</span>
+        <span class="stat-label">Last Updated</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TICKER -->
+  <div class="ticker-wrap">
+    <div class="ticker">
+      <div class="ticker-item"><span>►</span> White House registers alien.gov and aliens.gov domains — "Stay tuned!" says spokeswoman</div>
+      <div class="ticker-item"><span>►</span> Trump directs DOD to begin releasing UAP/UFO government files — Feb 20, 2026</div>
+      <div class="ticker-item"><span>►</span> House Oversight hearing: "Immaculate Constellation" program alleged to hold thousands of HD UAP images</div>
+      <div class="ticker-item"><span>►</span> AARO caseload exceeds 2,000 — office holds invite-only UAP research workshop</div>
+      <div class="ticker-item"><span>►</span> RAF Lakenheath, Mildenhall, Feltwell: 20 drone sightings over UK bases — Nov 2025</div>
+      <div class="ticker-item"><span>►</span> Buga Sphere: new Colombia metallic orb video surfaces — Jan 29, 2026</div>
+      <div class="ticker-item"><span>►</span> Ret. Maj. Gen. McCasland missing — once commanded Wright-Patterson AFB</div>
+      <div class="ticker-item"><span>►</span> Luis Elizondo testifies: advanced tech not from any known government monitoring nuclear sites</div>
+      <!-- Duplicate for seamless loop -->
+      <div class="ticker-item"><span>►</span> White House registers alien.gov and aliens.gov domains — "Stay tuned!" says spokeswoman</div>
+      <div class="ticker-item"><span>►</span> Trump directs DOD to begin releasing UAP/UFO government files — Feb 20, 2026</div>
+      <div class="ticker-item"><span>►</span> House Oversight hearing: "Immaculate Constellation" program alleged to hold thousands of HD UAP images</div>
+      <div class="ticker-item"><span>►</span> AARO caseload exceeds 2,000 — office holds invite-only UAP research workshop</div>
+      <div class="ticker-item"><span>►</span> RAF Lakenheath, Mildenhall, Feltwell: 20 drone sightings over UK bases — Nov 2025</div>
+      <div class="ticker-item"><span>►</span> Buga Sphere: new Colombia metallic orb video surfaces — Jan 29, 2026</div>
+      <div class="ticker-item"><span>►</span> Ret. Maj. Gen. McCasland missing — once commanded Wright-Patterson AFB</div>
+      <div class="ticker-item"><span>►</span> Luis Elizondo testifies: advanced tech not from any known government monitoring nuclear sites</div>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <nav class="container">
+    <a href="#latest" class="active">Latest Intel</a>
+    <a href="#timeline">Timeline</a>
+    <a href="#sources">Sources</a>
+    <a href="#glossary">Glossary</a>
+  </nav>
+
+  <!-- BREAKING ALERT -->
+  <div class="container">
+    <div class="section">
+      <div class="alert animate">
+        <div class="alert-icon">◈ ALERT</div>
+        <div class="alert-text">
+          <strong>MAR 18, 2026:</strong> The White House has registered <strong>alien.gov</strong> and <strong>aliens.gov</strong> — two new federal domains — amid the Trump administration's directive for unprecedented UAP disclosure. A White House spokeswoman replied to press inquiries only with "Stay tuned!" and an alien emoji.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LATEST NEWS -->
+  <div class="container" id="latest">
+    <div class="section">
+      <div class="section-header animate">
+        <span class="section-title">// Latest Intel</span>
+        <div class="section-line"></div>
+        <span class="section-count">8 SIGNALS</span>
+      </div>
+
+      <div class="news-grid">
+        <div class="news-main">
+
+          <div class="card card-featured animate delay-1">
+            <span class="card-tag tag-disclosure">Disclosure</span>
+            <h2 class="card-title"><a href="https://defensescoop.com/2026/03/18/white-house-registers-new-alien-gov-domains-ufo-uap/" target="_blank">White House Registers alien.gov — DOD Tackles Trump's Disclosure Directive</a></h2>
+            <p class="card-excerpt">The White House registered two new government domains — alien.gov and aliens.gov — just one month after Trump ordered the Pentagon and federal agencies to release UAP and extraterrestrial records. The move comes as AARO's caseload surpasses 2,000 and the DOD promises "full compliance" with the presidential directive.</p>
+            <div class="card-meta">
+              <span class="card-meta-source">DefenseScoop</span>
+              <span>MAR 18, 2026</span>
+              <span>5 DAYS AGO</span>
+            </div>
+          </div>
+
+          <div class="card animate delay-2">
+            <span class="card-tag tag-congress">Congress</span>
+            <h2 class="card-title"><a href="https://digg.com/underreported/cZL0uXk/inside-capitol-hills-latest-ufo-hearings" target="_blank">Capitol Hill UAP Hearings: "Immaculate Constellation" & Recovered Technologies</a></h2>
+            <p class="card-excerpt">The House Oversight Committee held a landmark joint hearing — "Unidentified Anomalous Phenomena: Exposing the Truth" — where former military officials alleged the US is engaged in a secret decades-long arms race using recovered UAP technologies. Journalist Michael Shellenberger alleged that a classified program called "Immaculate Constellation" holds thousands of high-resolution UAP images never seen by the public.</p>
+            <div class="card-meta">
+              <span class="card-meta-source">TIME / Digg</span>
+              <span>MAR 10, 2026</span>
+              <span>2 WEEKS AGO</span>
+            </div>
+          </div>
+
+          <div class="card animate delay-3">
+            <span class="card-tag tag-breaking">Breaking</span>
+            <h2 class="card-title"><a href="https://www.cnn.com/2026/03/15/us/wright-patterson-air-force-base" target="_blank">Ret. Major General Missing — Once Led UFO-Lore Base Wright-Patterson</a></h2>
+            <p class="card-excerpt">Retired Air Force Maj. Gen. William Neil McCasland, 68, has been missing from his Albuquerque home since Feb 27. McCasland commanded Wright-Patterson AFB — historically linked to crashed UFO recovery claims. The FBI has joined the search. His wife stated he had "a brief association with the UFO community" but stressed he holds no special knowledge of alleged Roswell materials.</p>
+            <div class="card-meta">
+              <span class="card-meta-source">CNN</span>
+              <span>MAR 15, 2026</span>
+              <span>1 WEEK AGO</span>
+            </div>
+          </div>
+
+          <div class="card animate delay-4">
+            <span class="card-tag tag-military">Military</span>
+            <h2 class="card-title"><a href="https://defensescoop.com/2026/03/16/dod-ufo-workshop-uap-research-aaro/" target="_blank">Pentagon's AARO Held Secret Invite-Only UAP Research Workshop</a></h2>
+            <p class="card-excerpt">Around 40 government, academic, and independent researchers gathered privately to standardise how UAP sighting data is collected and analysed — including applying AI to large-scale datasets for pattern recognition. AARO's published whitepaper calls the event "a groundbreaking gathering of minds" and highlights the need for consistent reporting templates and interoperable databases.</p>
+            <div class="card-meta">
+              <span class="card-meta-source">DefenseScoop</span>
+              <span>MAR 16, 2026</span>
+              <span>1 WEEK AGO</span>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="news-side">
+
+          <div class="card card-mini animate delay-1">
+            <span class="card-tag tag-disclosure">Disclosure</span>
+            <h3 class="card-title"><a href="https://defensescoop.com/2026/02/25/hegseth-ufo-disclosure-trump-aaro-uap-caseload/" target="_blank">Hegseth: Pentagon in Full Compliance with UAP Disclosure Order</a></h3>
+            <p class="card-excerpt">Defense Secretary Pete Hegseth confirmed DOD is working on the disclosure process, though no timeline was given. Records likely include hundreds of classified photos and videos.</p>
+            <div class="card-meta">
+              <span class="card-meta-source">DefenseScoop</span>
+              <span>FEB 25, 2026</span>
+            </div>
+          </div>
+
+          <div class="card card-mini animate delay-2">
+            <span class="card-tag tag-science">Science</span>
+            <h3 class="card-title"><a href="https://www.cbsnews.com/news/ufo-files-released-scientists-trump/" target="_blank">Scientists on UAP Files: "Most People Will Be Disappointed"</a></h3>
+            <p class="card-excerpt">AARO's first director Sean Kirkpatrick warns many documents will be heavily redacted and unlikely to confirm alien life. However, older declassified surveillance data could enable new scientific analysis.</p>
+            <div class="card-meta">
+              <span class="card-meta-source">CBS News</span>
+              <span>FEB 24, 2026</span>
+            </div>
+          </div>
+
+          <div class="card card-mini animate delay-3">
+            <span class="card-tag tag-sighting">Sighting</span>
+            <h3 class="card-title"><a href="https://3i-atlas.net/posts/ufo-sightings-today-2026" target="_blank">Buga Sphere: New Video of Colombia Metallic Orb Surfaces</a></h3>
+            <p class="card-excerpt">A new video from Valle del Cauca, Colombia shows a seamless metallic sphere gliding silently overhead — echoing the original Buga discovery. The town has erected a monument and become a UAP tourism hub.</p>
+            <div class="card-meta">
+              <span class="card-meta-source">3i-Atlas</span>
+              <span>JAN 29, 2026</span>
+            </div>
+          </div>
+
+          <div class="card card-mini animate delay-4">
+            <span class="card-tag tag-military">Military</span>
+            <h3 class="card-title"><a href="https://defensescoop.com/2025/12/10/uap-ufo-military-intercepts-north-america-fy-2026-ndaa/" target="_blank">FY2026 NDAA: Congress Demands Briefings on UAP Intercepts Since 2004</a></h3>
+            <p class="card-excerpt">New defence legislation requires the Pentagon to brief lawmakers on all UAP intercepts by NORAD and NORTHCOM since 2004, including data collected during those operations.</p>
+            <div class="card-meta">
+              <span class="card-meta-source">DefenseScoop</span>
+              <span>DEC 10, 2025</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DISCLOSURE TIMELINE -->
+  <div class="container" id="timeline">
+    <div class="section">
+      <div class="section-header animate">
+        <span class="section-title">// Disclosure Timeline</span>
+        <div class="section-line"></div>
+        <span class="section-count">KEY EVENTS</span>
+      </div>
+
+      <div class="timeline animate delay-1">
+        <div class="timeline-item">
+          <div class="timeline-date">MAR 18, 2026</div>
+          <div class="timeline-title">White House registers alien.gov & aliens.gov</div>
+          <div class="timeline-body">Two new federal domains go live amid the disclosure push. White House says "Stay tuned!"</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-date">MAR 10, 2026</div>
+          <div class="timeline-title">House Oversight UAP Hearing: "Exposing the Truth"</div>
+          <div class="timeline-body">Former officials allege secret arms race with recovered UAP tech; "Immaculate Constellation" program alleged.</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-date">FEB 20, 2026</div>
+          <div class="timeline-title">Trump Orders Release of UAP / Alien Files</div>
+          <div class="timeline-body">Presidential directive orders DOD and agencies to "identify and release" all UAP and extraterrestrial records.</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-date">NOV 2025</div>
+          <div class="timeline-title">RAF Lakenheath Drone Incidents</div>
+          <div class="timeline-body">~20 drone sightings over three UK RAF bases over three nights, grounding surrounding aircraft.</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-date">MAR 2025</div>
+          <div class="timeline-title">The Buga Sphere Discovery, Colombia</div>
+          <div class="timeline-body">A seamless metallic orb discovered in Buga, Colombia — widely discussed and later confirmed in follow-up videos.</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-date">JUL 2023</div>
+          <div class="timeline-title">David Grusch Congressional Testimony</div>
+          <div class="timeline-body">Former Air Force intelligence officer alleges the US government possesses recovered UAPs and "non-human" remains.</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-date">2022</div>
+          <div class="timeline-title">AARO Founded</div>
+          <div class="timeline-body">The All-domain Anomaly Resolution Office established under the Biden administration to centralize UAP investigations.</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-date">2004</div>
+          <div class="timeline-title">USS Nimitz Incident</div>
+          <div class="timeline-body">Navy pilots encounter unidentified objects performing physics-defying manoeuvres over the Pacific — later declassified.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SOURCES -->
+  <div class="container" id="sources">
+    <div class="section">
+      <div class="section-header animate">
+        <span class="section-title">// Verified Sources</span>
+        <div class="section-line"></div>
+        <span class="section-count">INTEL FEEDS</span>
+      </div>
+      <div class="sources-grid animate delay-1">
+        <a href="https://aaro.mil" target="_blank" class="source-card">
+          <span class="source-type">GOV</span>
+          <div class="source-name">AARO.MIL</div>
+          <div class="source-desc">Official Pentagon UAP investigation office. Submit reports, access historical data.</div>
+        </a>
+        <a href="https://defensescoop.com" target="_blank" class="source-card">
+          <span class="source-type">NEWS</span>
+          <div class="source-name">DefenseScoop</div>
+          <div class="source-desc">Deep Pentagon & military intelligence reporting on UAP developments.</div>
+        </a>
+        <a href="https://nuforc.org" target="_blank" class="source-card">
+          <span class="source-type">DATABASE</span>
+          <div class="source-name">NUFORC</div>
+          <div class="source-desc">National UFO Reporting Center — civilian sighting database since 1974.</div>
+        </a>
+        <a href="https://thedebrief.org" target="_blank" class="source-card">
+          <span class="source-type">INVESTIGATIVE</span>
+          <div class="source-name">The Debrief</div>
+          <div class="source-desc">Science and national security journalism with deep UAP coverage.</div>
+        </a>
+        <a href="https://www.mysterywire.com" target="_blank" class="source-card">
+          <span class="source-type">MEDIA</span>
+          <div class="source-name">Mystery Wire</div>
+          <div class="source-desc">George Knapp's investigative UAP journalism and exclusive interviews.</div>
+        </a>
+        <a href="https://uaptracker.com" target="_blank" class="source-card">
+          <span class="source-type">TRACKER</span>
+          <div class="source-name">UAP Tracker</div>
+          <div class="source-desc">Aggregates UAP sightings and government reports in real time.</div>
+        </a>
+        <a href="https://www.mufon.com" target="_blank" class="source-card">
+          <span class="source-type">ORG</span>
+          <div class="source-name">MUFON</div>
+          <div class="source-desc">Mutual UFO Network — one of the largest civilian UAP research organisations.</div>
+        </a>
+        <a href="https://seti.org" target="_blank" class="source-card">
+          <span class="source-type">SCIENCE</span>
+          <div class="source-name">SETI Institute</div>
+          <div class="source-desc">Scientific search for extraterrestrial intelligence — peer-reviewed research.</div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- GLOSSARY -->
+  <div class="container" id="glossary">
+    <div class="section">
+      <div class="section-header animate">
+        <span class="section-title">// Field Glossary</span>
+        <div class="section-line"></div>
+        <span class="section-count">TERMINOLOGY</span>
+      </div>
+      <div class="glossary-grid animate delay-1">
+        <div class="glossary-item">
+          <div class="glossary-term">UAP</div>
+          <div class="glossary-def">Unidentified Anomalous Phenomena — the US government's modern term, replacing UFO. Covers aerial, maritime, and transmedium objects.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">AARO</div>
+          <div class="glossary-def">All-domain Anomaly Resolution Office. DOD's current UAP investigation unit, founded 2022. Caseload now exceeds 2,000.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">NHI</div>
+          <div class="glossary-def">Non-Human Intelligence — term used by whistleblowers and some officials to describe alleged non-terrestrial entities or their technology.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">IMMACULATE CONSTELLATION</div>
+          <div class="glossary-def">Alleged classified government program said to hold thousands of high-resolution UAP images and videos, per journalist Michael Shellenberger's 2026 congressional testimony.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">TRANSMEDIUM</div>
+          <div class="glossary-def">Objects observed operating across multiple domains — air, sea, and space — without apparent propulsion or transition signatures.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">NUFORC</div>
+          <div class="glossary-def">National UFO Reporting Center — civilian organisation tracking and archiving public UAP sightings since 1974.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">DISCLOSURE</div>
+          <div class="glossary-def">The process by which governments declassify and publish records relating to UAP encounters, recovered materials, or related research programs.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">WHISTLEBLOWER</div>
+          <div class="glossary-def">Former government or military personnel who claim inside knowledge of concealed UAP programs, such as David Grusch or Luis Elizondo.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">SIGNAL_UNKNOWN</div>
+    <div class="footer-text">
+      UAP Intelligence Aggregator · Updated March 2026<br>
+      All linked articles are property of their respective publishers.<br>
+      This site aggregates publicly available reporting for research purposes.<br><br>
+      THE TRUTH IS OUT THERE · STAY VIGILANT
+    </div>
+  </footer>
+
+  <script>
+    // Live clock
+    function updateClock() {
+      const now = new Date();
+      const h = String(now.getUTCHours()).padStart(2, '0');
+      const m = String(now.getUTCMinutes()).padStart(2, '0');
+      const s = String(now.getUTCSeconds()).padStart(2, '0');
+      document.getElementById('clock').textContent = `${h}:${m}:${s} UTC`;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // Smooth scroll for nav
+    document.querySelectorAll('nav a').forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        document.querySelectorAll('nav a').forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+        const target = document.querySelector(link.getAttribute('href'));
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  </script>
 </body>
 </html>
